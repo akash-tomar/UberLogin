@@ -1,4 +1,4 @@
-package com.iot.hmb.uberlogin;
+package com.akash.android.uberlogin;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

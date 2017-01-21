@@ -1,20 +1,14 @@
-package com.iot.hmb.uberlogin;
+package com.akash.android.uberlogin;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.uber.sdk.android.core.UberSdk;
 import com.uber.sdk.android.core.auth.AccessTokenManager;
 import com.uber.sdk.android.core.auth.AuthenticationError;
 import com.uber.sdk.android.core.auth.LoginButton;
@@ -22,19 +16,9 @@ import com.uber.sdk.android.core.auth.LoginCallback;
 import com.uber.sdk.android.core.auth.LoginManager;
 import com.uber.sdk.core.auth.AccessToken;
 import com.uber.sdk.core.auth.Scope;
-import com.uber.sdk.rides.client.Session;
 import com.uber.sdk.rides.client.SessionConfiguration;
-import com.uber.sdk.rides.client.UberRidesApi;
-import com.uber.sdk.rides.client.error.ApiError;
-import com.uber.sdk.rides.client.error.ErrorParser;
-import com.uber.sdk.rides.client.model.UserProfile;
-import com.uber.sdk.rides.client.services.RidesService;
 
 import java.util.Arrays;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 import static com.uber.sdk.android.core.utils.Preconditions.checkNotNull;
 import static com.uber.sdk.android.core.utils.Preconditions.checkState;
@@ -64,11 +48,12 @@ public class MainActivity extends AppCompatActivity {
         configuration = new SessionConfiguration.Builder()
                 .setClientId(CLIENT_ID)
                 .setRedirectUri(REDIRECT_URI)
+                .setRedirectUri("http://localhost")
+                .setEnvironment(SessionConfiguration.Environment.SANDBOX)
                 .setServerToken("7Dv5QZXK45jIm54cQgr2bWVj7UacOL4ak10Rnw5q")
                 .setClientSecret("CQs3R3yN7j3Cbp2Fu6rLK-fPE1buYAMb_bV-jpmf")
-                .setScopes(Arrays.asList(Scope.PROFILE))
+                .setScopes(Arrays.asList(Scope.PROFILE,Scope.RIDE_WIDGETS,Scope.REQUEST))
                 .build();
-
         validateConfiguration(configuration);
 
         accessTokenManager = new AccessTokenManager(this);
@@ -80,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Create a button using a custom AccessTokenManager
         //Custom Scopes are set using XML for this button as well in R.layout.activity_sample
-        blackButton = (LoginButton) findViewById(R.id.uber_button_black);
+        blackButton = (LoginButton) findViewById(R.id.uber_button_white);
         blackButton.setAccessTokenManager(accessTokenManager)
                 .setCallback(new SampleLoginCallback())
                 .setSessionConfiguration(configuration)
@@ -93,21 +78,28 @@ public class MainActivity extends AppCompatActivity {
                 configuration,
                 CUSTOM_BUTTON_REQUEST_CODE);
 
-        customButton = (Button) findViewById(R.id.custom_uber_button);
-        customButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loginManager.login(MainActivity.this);
-            }
-        });
+//        customButton = (Button) findViewById(R.id.custom_uber_button);
+//        customButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                loginManager.login(MainActivity.this);
+//            }
+//        });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (loginManager.isAuthenticated()) {
-            loadProfileInfo();
-        }
+    private void validateConfiguration(SessionConfiguration configuration) {
+        String nullError = "%s must not be null";
+        String sampleError = "Please update your %s in the gradle.properties of the project before " +
+                "using the Uber SDK Sample app. For a more secure storage location, " +
+                "please investigate storing in your user home gradle.properties ";
+
+        checkNotNull(configuration, String.format(nullError, "SessionConfiguration"));
+        checkNotNull(configuration.getClientId(), String.format(nullError, "Client ID"));
+        checkNotNull(configuration.getRedirectUri(), String.format(nullError, "Redirect URI"));
+        checkState(!configuration.getClientId().equals("insert_your_client_id_here"),
+                String.format(sampleError, "Client ID"));
+        checkState(!configuration.getRedirectUri().equals("insert_your_redirect_uri_here"),
+                String.format(sampleError, "Redirect URI"));
     }
 
     @Override
@@ -139,9 +131,10 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onLoginSuccess(@NonNull AccessToken accessToken) {
-            Log.d("uber app","yaieee");
-            Log.d("uber app",accessToken+"");
-            loadProfileInfo();
+            Log.d("uber app",accessToken.getTokenType());
+            Log.d("uber app-refresh",accessToken.getRefreshToken());
+            Log.d("uber app",""+accessToken.getScopes());
+            Log.d("uber app",accessToken.getToken());
         }
 
         @Override
@@ -150,49 +143,5 @@ public class MainActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG)
                     .show();
         }
-    }
-
-    private void loadProfileInfo() {
-        Session session = loginManager.getSession();
-        RidesService service = UberRidesApi.with(session).build().createService();
-
-        service.getUserProfile()
-                .enqueue(new Callback<UserProfile>() {
-                    @Override
-                    public void onResponse(Call<UserProfile> call, Response<UserProfile> response) {
-                        if (response.isSuccessful()) {
-                            Toast.makeText(MainActivity.this, getString(R.string.greeting, response.body().getFirstName()), Toast.LENGTH_LONG).show();
-                        } else {
-                            ApiError error = ErrorParser.parseError(response);
-                            Toast.makeText(MainActivity.this, error.getClientErrors().get(0).getTitle(), Toast.LENGTH_LONG).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<UserProfile> call, Throwable t) {
-
-                    }
-                });
-    }
-
-
-
-    /**
-     * Validates the local variables needed by the Uber SDK used in the sample project
-     * @param configuration
-     */
-    private void validateConfiguration(SessionConfiguration configuration) {
-        String nullError = "%s must not be null";
-        String sampleError = "Please update your %s in the gradle.properties of the project before " +
-                "using the Uber SDK Sample app. For a more secure storage location, " +
-                "please investigate storing in your user home gradle.properties ";
-
-        checkNotNull(configuration, String.format(nullError, "SessionConfiguration"));
-        checkNotNull(configuration.getClientId(), String.format(nullError, "Client ID"));
-        checkNotNull(configuration.getRedirectUri(), String.format(nullError, "Redirect URI"));
-        checkState(!configuration.getClientId().equals("insert_your_client_id_here"),
-                String.format(sampleError, "Client ID"));
-        checkState(!configuration.getRedirectUri().equals("insert_your_redirect_uri_here"),
-                String.format(sampleError, "Redirect URI"));
     }
 }

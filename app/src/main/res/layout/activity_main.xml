@@ -24,37 +24,4 @@
 
     </FrameLayout>
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:background="@android:color/white"
-        >
-
-        <com.uber.sdk.android.core.auth.LoginButton
-            android:id="@+id/uber_button_black"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            uber:ub__scopes="all_trips|request|profile"
-            uber:ub__style="black" />
-
-    </FrameLayout>
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:background="@android:color/black"
-        >
-
-        <Button
-            android:id="@+id/custom_uber_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Login" />
-
-    </FrameLayout>
-
 </LinearLayout>
